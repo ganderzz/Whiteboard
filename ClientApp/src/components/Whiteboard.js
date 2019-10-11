@@ -1,51 +1,40 @@
 import React, { Component } from 'react';
-import * as signalR from "@microsoft/signalr"
 
 export class Whiteboard extends Component {
     static displayName = Whiteboard.name;
 
-    // @TODO: Move out
-    state = {
-        users: []
-    }
-
-    color = "#222222";
-
-    connection = null;
     isMouseDown = false;
+    isRegisteredtoDraw = false;
     previousCoords = { x: 0, y: 0 };
 
     DOM = React.createRef();
 
     componentDidMount() {
-        this.connection = new signalR.HubConnectionBuilder()
-            .withUrl("/whiteboard")
-            .withAutomaticReconnect()
-            .configureLogging(signalR.LogLevel.Information)
-            .build();
-
-        this.connection.start();
-
-        this.connection.on("Draw", (previousX, previousY, x, y, color) => {
-            this.handleDraw(previousX, previousY, x, y, color);
-        });
-
-        this.connection.on("Connect", (color, users) => {
-            this.color = color;
-            this.setState({ users });
-        });
-
-        this.connection.on("UserConnected", (users) => {
-            this.setState({ users });
-        });
+        this.registerHubEvent();
 
         // Stop drawing even when outside of the canvas
         document.addEventListener("pointerup", this.handlePointerUp);
     }
 
+    componentDidUpdate(prevProps) {
+        if (this.props.connection && prevProps.connection !== this.props.connection) {
+            this.registerHubEvent();
+        }
+    }
+
     componentWillUnmount() {
         // Clear memory
         document.removeEventListener("pointerup", this.handlePointerUp);
+    }
+
+    registerHubEvent = () => {
+        if (this.props.connection && !this.isRegisteredtoDraw) {
+            this.props.connection.on("Draw", ({ previousCoords, coords, colorHex }) => {
+                this.handleDraw(previousCoords.x, previousCoords.y, coords.x, coords.y, colorHex);
+            });
+
+            this.isRegisteredtoDraw = true;
+        }
     }
 
     handlePointerDown = (e) => {
@@ -59,12 +48,24 @@ export class Whiteboard extends Component {
 
     handlePointerMove = (e) => {
         if (this.isMouseDown) {
+            if (!this.props.connection) {
+                alert("Couldn't connect to the server.");
+                return;
+            }
+
             const x = e.clientX - this.DOM.current.offsetLeft;
             const y = e.clientY - this.DOM.current.offsetTop;
 
-            this.connection.invoke("Draw", this.previousCoords.x, this.previousCoords.y, x, y);
+            this.props.connection.invoke(
+                "Draw",
+                {
+                    PreviousCoords: this.previousCoords,
+                    Coords: { x, y },
+                    ColorHex: this.props.drawColor
+                }
+            );
 
-            this.handleDraw(this.previousCoords.x, this.previousCoords.y, x, y, this.color);
+            this.handleDraw(this.previousCoords.x, this.previousCoords.y, x, y, this.props.drawColor);
 
             this.previousCoords = { x, y };
         }
@@ -93,21 +94,15 @@ export class Whiteboard extends Component {
 
     render() {
         return (
-            <>
-                <div style={{ position: "absolute", top: 50, left: 5, padding: 10, background: "#DDD" }}>
-                    Users<br />
-                    {this.state.users && (<ul>{this.state.users.map(p => <li key={p.Key}><div style={{ display: "inline-block", width: 15, height: 15, background: p.Value }} /> {p.Key}</li>)}</ul>)}
-                </div>
-                <canvas
-                    ref={this.DOM}
-                    height={window.innerHeight - 52}
-                    width={window.innerWidth}
-                    onPointerDown={this.handlePointerDown}
-                    onPointerMove={this.handlePointerMove}
-                >
-                    Not supported by browser
+            <canvas
+                ref={this.DOM}
+                height={window.innerHeight - 52}
+                width={window.innerWidth}
+                onPointerDown={this.handlePointerDown}
+                onPointerMove={this.handlePointerMove}
+            >
+                Not supported by browser
             </canvas>
-            </>
         );
     }
 }

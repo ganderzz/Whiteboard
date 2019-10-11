@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Route } from 'react-router';
 import { Header } from "./components/Header";
-import { Whiteboard } from './components/Whiteboard';
+import { WhiteboardPage } from './pages/WhiteboardPage';
 
 import './custom.css'
 
@@ -14,7 +14,7 @@ export default class App extends Component {
         return (
             <div ref={this.DOM}>
                 <Header />
-                <Route exact path='/' component={Whiteboard} />
+                <Route exact path='/' component={WhiteboardPage} />
             </div>
         );
     }
