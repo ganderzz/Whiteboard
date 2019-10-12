@@ -2,11 +2,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using Whiteboard.Hubs.Interfaces;
 using WhiteBoard.Models.Actions;
 
-namespace WhiteBoard.Hubs
+namespace Whiteboard.Hubs
 {
-  public class WhiteBoardHub : Hub
+  public class WhiteboardHub : Hub<IWhiteboardHub>
   {
     public override Task OnConnectedAsync()
     {
@@ -14,7 +15,7 @@ namespace WhiteBoard.Hubs
 
       Users.TryAdd(Context.ConnectionId, newColor);
 
-      Clients.All.SendAsync("UserConnected", Users.ToArray());
+      Clients.All.UsersUpdated(Users.ToArray());
 
       return base.OnConnectedAsync();
     }
@@ -23,14 +24,14 @@ namespace WhiteBoard.Hubs
     {
       Users.TryRemove(Context.ConnectionId, out string _);
 
-      Clients.Others.SendAsync("UserConnected", Users.ToArray());
+      Clients.All.UsersUpdated(Users.ToArray());
 
       return base.OnDisconnectedAsync(exception);
     }
 
     public Task Draw(UserDrawAction drawAction)
     {
-      return Clients.Others.SendAsync("Draw", drawAction);
+      return Clients.Others.Draw(drawAction);
     }
 
     private static ConcurrentDictionary<string, string> Users = new ConcurrentDictionary<string, string>();
