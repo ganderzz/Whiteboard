@@ -1,10 +1,9 @@
 ﻿namespace WhiteBoard.Models
 {
+  public struct Point
+  {
+    public int X { get; set; }
 
-    public struct Point
-    {
-        public int X { get; set; }
-
-        public int Y { get; set; }
-    }
+    public int Y { get; set; }
+  }
 }

@@ -36,8 +36,8 @@ export class WhiteboardPage extends Component {
             background: "#DDD"
           }}
         >
-          Users
-          <br />
+          <h5>Users</h5>
+
           {this.state.users && (
             <ul>
               {this.state.users.map(p => (
