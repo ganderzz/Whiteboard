@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WhiteBoard.Utilities
+namespace Whiteboard.Utilities
 {
   public static class Color
   {

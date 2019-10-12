@@ -7,9 +7,12 @@
     <IsPackable>false</IsPackable>
     <SpaRoot>ClientApp\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
+    <RootNamespace>Whiteboard</RootNamespace>
+    <AssemblyName>Whiteboard</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="IdentityServer4" Version="3.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="3.0.0" />
     <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="3.6.3">
       <PrivateAssets>all</PrivateAssets>
@@ -22,6 +25,13 @@
     <Content Remove="$(SpaRoot)**" />
     <None Remove="$(SpaRoot)**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ClientApp\src\App.tsx" />
+    <None Remove="ClientApp\src\components\Header.tsx" />
+    <None Remove="ClientApp\src\components\Whiteboard.tsx" />
+    <None Remove="ClientApp\src\pages\WhiteboardPage.tsx" />
   </ItemGroup>
 
   <ItemGroup>
