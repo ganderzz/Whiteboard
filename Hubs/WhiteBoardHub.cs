@@ -6,34 +6,33 @@ using WhiteBoard.Models.Actions;
 
 namespace WhiteBoard.Hubs
 {
-    public class WhiteBoardHub : Hub
+  public class WhiteBoardHub : Hub
+  {
+    public override Task OnConnectedAsync()
     {
-        public override Task OnConnectedAsync()
-        {
-            var newColor = Utilities.Color.GetRandomHexColor();
+      var newColor = Utilities.Color.GetRandomHexColor();
 
-            Users.TryAdd(Context.ConnectionId, newColor);
+      Users.TryAdd(Context.ConnectionId, newColor);
 
-            Clients.Caller.SendAsync("Connect", newColor, Users.ToArray());
-            Clients.Others.SendAsync("UserConnected", Users.ToArray());
+      Clients.All.SendAsync("UserConnected", Users.ToArray());
 
-            return base.OnConnectedAsync(); 
-        }
-
-        public override Task OnDisconnectedAsync(Exception exception)
-        {
-            Users.TryRemove(Context.ConnectionId, out string _);
-
-            Clients.Others.SendAsync("UserConnected", Users.ToArray());
-
-            return base.OnDisconnectedAsync(exception);
-        }
-
-        public Task Draw(UserDrawAction drawAction)
-        {
-            return Clients.Others.SendAsync("Draw", drawAction);
-        }
-
-        private static ConcurrentDictionary<string, string> Users = new ConcurrentDictionary<string, string>();
+      return base.OnConnectedAsync();
     }
+
+    public override Task OnDisconnectedAsync(Exception exception)
+    {
+      Users.TryRemove(Context.ConnectionId, out string _);
+
+      Clients.Others.SendAsync("UserConnected", Users.ToArray());
+
+      return base.OnDisconnectedAsync(exception);
+    }
+
+    public Task Draw(UserDrawAction drawAction)
+    {
+      return Clients.Others.SendAsync("Draw", drawAction);
+    }
+
+    private static ConcurrentDictionary<string, string> Users = new ConcurrentDictionary<string, string>();
+  }
 }
