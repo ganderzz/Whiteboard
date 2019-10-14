@@ -34,6 +34,6 @@ namespace Whiteboard.Hubs
       return Clients.Others.Draw(drawAction);
     }
 
-    private static ConcurrentDictionary<string, string> Users = new ConcurrentDictionary<string, string>();
+    private static ConcurrentDictionary<string, string> Users => new ConcurrentDictionary<string, string>();
   }
 }

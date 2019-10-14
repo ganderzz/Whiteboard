@@ -1,5 +1,6 @@
 ﻿import * as React from "react";
 import * as signalR from "@microsoft/signalr";
+import * as PIXI from "pixi.js";
 import { Whiteboard } from "../components/Whiteboard";
 import { CirclePicker, ColorResult } from "react-color";
 
@@ -14,8 +15,8 @@ export class WhiteboardPage extends React.Component<{}, IState> {
         selectedColor: "#03a9f4"
     };
 
-    connection: signalR.HubConnection | null = null;
-    context: CanvasRenderingContext2D | null = null;
+    private connection: signalR.HubConnection | null = null;
+    private application: PIXI.Application | null = null;
 
     public componentDidMount() {
         this.connection = new signalR.HubConnectionBuilder()
@@ -33,9 +34,7 @@ export class WhiteboardPage extends React.Component<{}, IState> {
         this.connection.on(
             "Draw",
             ({ previousCoords, coords, colorHex }) => {
-                console.log(this.context)
                 this.handleDraw(
-                    this.context,
                     {
                         PreviousCoords: previousCoords,
                         Coords: coords,
@@ -46,16 +45,22 @@ export class WhiteboardPage extends React.Component<{}, IState> {
         );
     }
 
+    /**
+     * Update the user's current color.
+     */
     private handleColorChange = (color: ColorResult) => {
         this.setState({ selectedColor: color.hex })
     }
 
-    private handlePointerMove = (context: CanvasRenderingContext2D | null, payload: {
+    /**
+     * Send the current user's draw data to other users.
+     */
+    private handlePointerMove = (payload: {
         PreviousCoords: { x: number, y: number },
         Coords: { x: number, y: number },
         ColorHex?: string,
     }) => {
-        if (!context || !payload) {
+        if (!payload) {
             return;
         }
 
@@ -63,48 +68,51 @@ export class WhiteboardPage extends React.Component<{}, IState> {
             this.connection.invoke("Draw", { ...payload, ColorHex: this.state.selectedColor });
         }
 
-        this.handleDraw(context, payload);
+        this.handleDraw(payload);
     };
 
-    private handleDraw = (context: CanvasRenderingContext2D | null, payload: {
+    /**
+     * Draw to the whiteboard canvas.
+     */
+    private handleDraw = (payload: {
         PreviousCoords: { x: number, y: number },
         Coords: { x: number, y: number },
         ColorHex?: string,
     }) => {
-        if (!context || !payload) {
+        if (!this.application || !payload) {
             return;
         }
 
         const { PreviousCoords, Coords, ColorHex } = payload;
 
-        context.beginPath();
-        context.strokeStyle = ColorHex || this.state.selectedColor;
-        context.lineWidth = 5;
-        context.lineJoin = "round";
-        context.moveTo(PreviousCoords.x, PreviousCoords.y);
-        context.lineTo(Coords.x, Coords.y);
-        context.closePath();
-        context.stroke();
+        const line = new PIXI.Graphics();
+
+        line.lineStyle(3, PIXI.utils.string2hex(ColorHex || this.state.selectedColor), 1);
+        line.moveTo(PreviousCoords.x, PreviousCoords.y);
+        line.lineTo(Coords.x, Coords.y);
+        line.closePath();
+        line.endFill();
+
+        // checking null above, but typescript complains
+        this.application!.stage.addChild(line);
     };
 
     public render() {
         const { users, selectedColor } = this.state;
 
         return (
-            <div>
+            <section style={{ display: "grid", height: "100%", gridTemplateColumns: "minmax(280px, 20%) 80%" }}>
                 <div
                     style={{
-                        position: "absolute",
-                        top: 50,
-                        left: 5,
                         padding: 10,
-                        background: "#DDD"
+                        background: "#333",
+                        color: "#FFF"
                     }}
                 >
                     <strong>Users</strong>
 
-                    {users && (
-                        <ul style={{ listStyleType: "none", margin: "15px 0 10px 0", borderBottom: "1px solid #999", padding: "0 0 10px 0" }}>
+                    {users ? (
+                        <ul style={{ listStyleType: "none", margin: "15px 0 10px 0", borderBottom: "1px solid #777", padding: "0 0 10px 0" }}>
                             {users.map(p => (
                                 <li key={p.Key}>
                                     <div
@@ -120,16 +128,17 @@ export class WhiteboardPage extends React.Component<{}, IState> {
                                 </li>
                             ))}
                         </ul>
-                    )}
+                    ) : <em>None</em>}
 
                     <CirclePicker color={selectedColor} onChange={this.handleColorChange} />
                 </div>
 
+
                 <Whiteboard
                     onPointerMove={this.handlePointerMove}
-                    onContextLoad={(context) => { this.context = context; }}
+                    onContextLoad={(application) => { this.application = application; }}
                 />
-            </div>
+            </section>
         );
     }
 }

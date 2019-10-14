@@ -26,6 +26,7 @@ var __assign = (this && this.__assign) || function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var React = require("react");
 var signalR = require("@microsoft/signalr");
+var PIXI = require("pixi.js");
 var Whiteboard_1 = require("../components/Whiteboard");
 var react_color_1 = require("react-color");
 var WhiteboardPage = /** @class */ (function (_super) {
@@ -37,32 +38,41 @@ var WhiteboardPage = /** @class */ (function (_super) {
             selectedColor: "#03a9f4"
         };
         _this.connection = null;
-        _this.context = null;
+        _this.application = null;
+        /**
+         * Update the user's current color.
+         */
         _this.handleColorChange = function (color) {
             _this.setState({ selectedColor: color.hex });
         };
-        _this.handlePointerMove = function (context, payload) {
-            if (!context || !payload) {
+        /**
+         * Send the current user's draw data to other users.
+         */
+        _this.handlePointerMove = function (payload) {
+            if (!payload) {
                 return;
             }
             if (_this.connection) {
                 _this.connection.invoke("Draw", __assign(__assign({}, payload), { ColorHex: _this.state.selectedColor }));
             }
-            _this.handleDraw(context, payload);
+            _this.handleDraw(payload);
         };
-        _this.handleDraw = function (context, payload) {
-            if (!context || !payload) {
+        /**
+         * Draw to the whiteboard canvas.
+         */
+        _this.handleDraw = function (payload) {
+            if (!_this.application || !payload) {
                 return;
             }
             var PreviousCoords = payload.PreviousCoords, Coords = payload.Coords, ColorHex = payload.ColorHex;
-            context.beginPath();
-            context.strokeStyle = ColorHex || _this.state.selectedColor;
-            context.lineWidth = 5;
-            context.lineJoin = "round";
-            context.moveTo(PreviousCoords.x, PreviousCoords.y);
-            context.lineTo(Coords.x, Coords.y);
-            context.closePath();
-            context.stroke();
+            var line = new PIXI.Graphics();
+            line.lineStyle(3, PIXI.utils.string2hex(ColorHex || _this.state.selectedColor), 1);
+            line.moveTo(PreviousCoords.x, PreviousCoords.y);
+            line.lineTo(Coords.x, Coords.y);
+            line.closePath();
+            line.endFill();
+            // checking null above, but typescript complains
+            _this.application.stage.addChild(line);
         };
         return _this;
     }
@@ -80,8 +90,7 @@ var WhiteboardPage = /** @class */ (function (_super) {
         });
         this.connection.on("Draw", function (_a) {
             var previousCoords = _a.previousCoords, coords = _a.coords, colorHex = _a.colorHex;
-            console.log(_this.context);
-            _this.handleDraw(_this.context, {
+            _this.handleDraw({
                 PreviousCoords: previousCoords,
                 Coords: coords,
                 ColorHex: colorHex,
@@ -91,16 +100,14 @@ var WhiteboardPage = /** @class */ (function (_super) {
     WhiteboardPage.prototype.render = function () {
         var _this = this;
         var _a = this.state, users = _a.users, selectedColor = _a.selectedColor;
-        return (React.createElement("div", null,
+        return (React.createElement("section", { style: { display: "grid", height: "100%", gridTemplateColumns: "minmax(280px, 20%) 80%" } },
             React.createElement("div", { style: {
-                    position: "absolute",
-                    top: 50,
-                    left: 5,
                     padding: 10,
-                    background: "#DDD"
+                    background: "#333",
+                    color: "#FFF"
                 } },
                 React.createElement("strong", null, "Users"),
-                users && (React.createElement("ul", { style: { listStyleType: "none", margin: "15px 0 10px 0", borderBottom: "1px solid #999", padding: "0 0 10px 0" } }, users.map(function (p) { return (React.createElement("li", { key: p.Key },
+                users ? (React.createElement("ul", { style: { listStyleType: "none", margin: "15px 0 10px 0", borderBottom: "1px solid #777", padding: "0 0 10px 0" } }, users.map(function (p) { return (React.createElement("li", { key: p.Key },
                     React.createElement("div", { style: {
                             display: "inline-block",
                             width: 15,
@@ -108,9 +115,9 @@ var WhiteboardPage = /** @class */ (function (_super) {
                             background: p.Value,
                             marginRight: 5
                         } }),
-                    p.Key)); }))),
+                    p.Key)); }))) : React.createElement("em", null, "None"),
                 React.createElement(react_color_1.CirclePicker, { color: selectedColor, onChange: this.handleColorChange })),
-            React.createElement(Whiteboard_1.Whiteboard, { onPointerMove: this.handlePointerMove, onContextLoad: function (context) { _this.context = context; } })));
+            React.createElement(Whiteboard_1.Whiteboard, { onPointerMove: this.handlePointerMove, onContextLoad: function (application) { _this.application = application; } })));
     };
     return WhiteboardPage;
 }(React.Component));

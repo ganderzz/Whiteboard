@@ -1,34 +1,39 @@
 import * as React from "react";
+import * as PIXI from "pixi.js";
 
 interface IProps {
-    onPointerMove: (context: CanvasRenderingContext2D | null, payload: {
+    onPointerMove: (payload: {
         PreviousCoords: { x: number, y: number },
         Coords: { x: number, y: number },
         ColorHex?: string,
     }) => void;
-    onContextLoad: (context: CanvasRenderingContext2D | null) => void;
+    onContextLoad: (context: PIXI.Application | null) => void;
 }
 
 export class Whiteboard extends React.Component<IProps> {
     static displayName = Whiteboard.name;
 
+    private application = new PIXI.Application({
+        antialias: true,
+        backgroundColor: 0xFFFFFF,
+    });
+
     private isMouseDown = false;
+    private hasLoadedContext = false;
     private previousCoords = { x: 0, y: 0 };
 
-    private DOM = React.createRef<HTMLCanvasElement>();
+    private DOM = React.createRef<HTMLDivElement>();
 
     public componentDidMount() {
         // Stop drawing even when outside of the canvas
         document.addEventListener("pointerup", this.handlePointerUp);
 
-        if (this.props.onContextLoad && this.DOM.current) {
-            this.props.onContextLoad(this.DOM.current.getContext("2d"));
+        if (this.DOM.current) {
+            this.DOM.current.appendChild(this.application.view);
         }
-    }
 
-    public componentDidUpdate() {
-        if (this.props.onContextLoad && this.DOM.current) {
-            this.props.onContextLoad(this.DOM.current.getContext("2d"));
+        if (this.props.onContextLoad) {
+            this.props.onContextLoad(this.application);
         }
     }
 
@@ -63,9 +68,7 @@ export class Whiteboard extends React.Component<IProps> {
         const y = e.clientY - this.DOM.current.offsetTop;
 
         if (this.props.onPointerMove) {
-            const context = this.DOM.current.getContext("2d");
-
-            this.props.onPointerMove(context, {
+            this.props.onPointerMove({
                 PreviousCoords: this.previousCoords,
                 Coords: { x, y },
             });
@@ -80,15 +83,11 @@ export class Whiteboard extends React.Component<IProps> {
 
     public render() {
         return (
-            <canvas
+            <div
                 ref={this.DOM}
-                height={window.innerHeight - 52}
-                width={window.innerWidth}
                 onPointerDown={this.handlePointerDown}
                 onPointerMove={this.handlePointerMove}
-            >
-                Not supported by browser
-            </canvas>
+            />
         );
     }
 }
