@@ -15,6 +15,7 @@ export class WhiteboardPage extends React.Component<{}, IState> {
     };
 
     connection: signalR.HubConnection | null = null;
+    context: CanvasRenderingContext2D | null = null;
 
     public componentDidMount() {
         this.connection = new signalR.HubConnectionBuilder()
@@ -28,11 +29,63 @@ export class WhiteboardPage extends React.Component<{}, IState> {
         this.connection.on("UsersUpdated", (users = []) => {
             this.setState({ users });
         });
+
+        this.connection.on(
+            "Draw",
+            ({ previousCoords, coords, colorHex }) => {
+                console.log(this.context)
+                this.handleDraw(
+                    this.context,
+                    {
+                        PreviousCoords: previousCoords,
+                        Coords: coords,
+                        ColorHex: colorHex,
+                    }
+                );
+            }
+        );
     }
 
     private handleColorChange = (color: ColorResult) => {
         this.setState({ selectedColor: color.hex })
     }
+
+    private handlePointerMove = (context: CanvasRenderingContext2D | null, payload: {
+        PreviousCoords: { x: number, y: number },
+        Coords: { x: number, y: number },
+        ColorHex?: string,
+    }) => {
+        if (!context || !payload) {
+            return;
+        }
+
+        if (this.connection) {
+            this.connection.invoke("Draw", { ...payload, ColorHex: this.state.selectedColor });
+        }
+
+        this.handleDraw(context, payload);
+    };
+
+    private handleDraw = (context: CanvasRenderingContext2D | null, payload: {
+        PreviousCoords: { x: number, y: number },
+        Coords: { x: number, y: number },
+        ColorHex?: string,
+    }) => {
+        if (!context || !payload) {
+            return;
+        }
+
+        const { PreviousCoords, Coords, ColorHex } = payload;
+
+        context.beginPath();
+        context.strokeStyle = ColorHex || this.state.selectedColor;
+        context.lineWidth = 5;
+        context.lineJoin = "round";
+        context.moveTo(PreviousCoords.x, PreviousCoords.y);
+        context.lineTo(Coords.x, Coords.y);
+        context.closePath();
+        context.stroke();
+    };
 
     public render() {
         const { users, selectedColor } = this.state;
@@ -73,8 +126,8 @@ export class WhiteboardPage extends React.Component<{}, IState> {
                 </div>
 
                 <Whiteboard
-                    connection={this.connection}
-                    drawColor={selectedColor}
+                    onPointerMove={this.handlePointerMove}
+                    onContextLoad={(context) => { this.context = context; }}
                 />
             </div>
         );
