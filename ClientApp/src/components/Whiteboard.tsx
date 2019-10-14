@@ -1,32 +1,34 @@
 import * as React from "react";
 
 interface IProps {
-    connection: signalR.HubConnection | null;
-    drawColor: string;
+    onPointerMove: (context: CanvasRenderingContext2D | null, payload: {
+        PreviousCoords: { x: number, y: number },
+        Coords: { x: number, y: number },
+        ColorHex?: string,
+    }) => void;
+    onContextLoad: (context: CanvasRenderingContext2D | null) => void;
 }
 
 export class Whiteboard extends React.Component<IProps> {
     static displayName = Whiteboard.name;
 
     private isMouseDown = false;
-    private isRegisteredtoDraw = false;
     private previousCoords = { x: 0, y: 0 };
 
     private DOM = React.createRef<HTMLCanvasElement>();
 
     public componentDidMount() {
-        this.registerHubEvent();
-
         // Stop drawing even when outside of the canvas
         document.addEventListener("pointerup", this.handlePointerUp);
+
+        if (this.props.onContextLoad && this.DOM.current) {
+            this.props.onContextLoad(this.DOM.current.getContext("2d"));
+        }
     }
 
-    public componentDidUpdate(prevProps: IProps) {
-        if (
-            this.props.connection &&
-            prevProps.connection !== this.props.connection
-        ) {
-            this.registerHubEvent();
+    public componentDidUpdate() {
+        if (this.props.onContextLoad && this.DOM.current) {
+            this.props.onContextLoad(this.DOM.current.getContext("2d"));
         }
     }
 
@@ -34,25 +36,6 @@ export class Whiteboard extends React.Component<IProps> {
         // Clear memory
         document.removeEventListener("pointerup", this.handlePointerUp);
     }
-
-    private registerHubEvent = () => {
-        if (this.props.connection && !this.isRegisteredtoDraw) {
-            this.props.connection.on(
-                "Draw",
-                ({ previousCoords, coords, colorHex }) => {
-                    this.handleDraw(
-                        previousCoords.x,
-                        previousCoords.y,
-                        coords.x,
-                        coords.y,
-                        colorHex
-                    );
-                }
-            );
-
-            this.isRegisteredtoDraw = true;
-        }
-    };
 
     private handlePointerDown = (e: React.MouseEvent) => {
         if (!this.DOM.current) {
@@ -72,11 +55,6 @@ export class Whiteboard extends React.Component<IProps> {
             return;
         }
 
-        if (!this.props.connection) {
-            alert("Couldn't connect to the server.");
-            return;
-        }
-
         if (!this.DOM.current) {
             return;
         }
@@ -84,46 +62,20 @@ export class Whiteboard extends React.Component<IProps> {
         const x = e.clientX - this.DOM.current.offsetLeft;
         const y = e.clientY - this.DOM.current.offsetTop;
 
-        this.props.connection.invoke("Draw", {
-            PreviousCoords: this.previousCoords,
-            Coords: { x, y },
-            ColorHex: this.props.drawColor
-        });
+        if (this.props.onPointerMove) {
+            const context = this.DOM.current.getContext("2d");
 
-        this.handleDraw(
-            this.previousCoords.x,
-            this.previousCoords.y,
-            x,
-            y,
-            this.props.drawColor
-        );
+            this.props.onPointerMove(context, {
+                PreviousCoords: this.previousCoords,
+                Coords: { x, y },
+            });
+        }
 
         this.previousCoords = { x, y };
     };
 
     private handlePointerUp = () => {
         this.isMouseDown = false;
-    };
-
-    private handleDraw = (previousX: number, previousY: number, x: number, y: number, color: string = "#222222") => {
-        if (!this.DOM.current) {
-            return;
-        }
-
-        const ctx = this.DOM.current.getContext("2d");
-
-        if (!ctx) {
-            return;
-        }
-
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 5;
-        ctx.lineJoin = "round";
-        ctx.moveTo(previousX, previousY);
-        ctx.lineTo(x, y);
-        ctx.closePath();
-        ctx.stroke();
     };
 
     public render() {
@@ -136,7 +88,7 @@ export class Whiteboard extends React.Component<IProps> {
                 onPointerMove={this.handlePointerMove}
             >
                 Not supported by browser
-      </canvas>
+            </canvas>
         );
     }
 }
