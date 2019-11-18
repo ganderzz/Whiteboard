@@ -29,7 +29,11 @@
 
   <ItemGroup>
     <None Remove="ClientApp\src\App.tsx" />
+    <None Remove="ClientApp\src\components\ColorPicker.tsx" />
     <None Remove="ClientApp\src\components\Header.tsx" />
+    <None Remove="ClientApp\src\components\Sidebar.tsx" />
+    <None Remove="ClientApp\src\components\SidebarHeader.tsx" />
+    <None Remove="ClientApp\src\components\UsersList.tsx" />
     <None Remove="ClientApp\src\components\Whiteboard.tsx" />
     <None Remove="ClientApp\src\pages\WhiteboardPage.tsx" />
   </ItemGroup>

@@ -16,10 +16,10 @@ export class Whiteboard extends React.Component<IProps> {
     private application = new PIXI.Application({
         antialias: true,
         backgroundColor: 0xFFFFFF,
+        
     });
 
     private isMouseDown = false;
-    private hasLoadedContext = false;
     private previousCoords = { x: 0, y: 0 };
 
     private DOM = React.createRef<HTMLDivElement>();
@@ -27,8 +27,11 @@ export class Whiteboard extends React.Component<IProps> {
     public componentDidMount() {
         // Stop drawing even when outside of the canvas
         document.addEventListener("pointerup", this.handlePointerUp);
+        document.addEventListener("resize", this.handleResize);
 
         if (this.DOM.current) {
+            this.application.resizeTo = this.DOM.current;
+
             this.DOM.current.appendChild(this.application.view);
         }
 
@@ -80,6 +83,14 @@ export class Whiteboard extends React.Component<IProps> {
     private handlePointerUp = () => {
         this.isMouseDown = false;
     };
+
+    private handleResize = () => {
+        if (this.DOM.current) {
+            const { clientWidth, clientHeight } = this.DOM.current;
+
+            this.application.renderer.resize(clientWidth, clientHeight);
+        }
+    }
 
     public render() {
         return (

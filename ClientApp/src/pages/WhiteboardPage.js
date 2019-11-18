@@ -28,7 +28,10 @@ var React = require("react");
 var signalR = require("@microsoft/signalr");
 var PIXI = require("pixi.js");
 var Whiteboard_1 = require("../components/Whiteboard");
-var react_color_1 = require("react-color");
+var ColorPicker_1 = require("../components/ColorPicker");
+var SidebarHeader_1 = require("../components/SidebarHeader");
+var UsersList_1 = require("../components/UsersList");
+var Sidebar_1 = require("../components/Sidebar");
 var WhiteboardPage = /** @class */ (function (_super) {
     __extends(WhiteboardPage, _super);
     function WhiteboardPage() {
@@ -101,22 +104,11 @@ var WhiteboardPage = /** @class */ (function (_super) {
         var _this = this;
         var _a = this.state, users = _a.users, selectedColor = _a.selectedColor;
         return (React.createElement("section", { style: { display: "grid", height: "100%", gridTemplateColumns: "minmax(280px, 20%) 80%" } },
-            React.createElement("div", { style: {
-                    padding: 10,
-                    background: "#333",
-                    color: "#FFF"
-                } },
-                React.createElement("strong", null, "Users"),
-                users ? (React.createElement("ul", { style: { listStyleType: "none", margin: "15px 0 10px 0", borderBottom: "1px solid #777", padding: "0 0 10px 0" } }, users.map(function (p) { return (React.createElement("li", { key: p.Key },
-                    React.createElement("div", { style: {
-                            display: "inline-block",
-                            width: 15,
-                            height: 15,
-                            background: p.Value,
-                            marginRight: 5
-                        } }),
-                    p.Key)); }))) : React.createElement("em", null, "None"),
-                React.createElement(react_color_1.CirclePicker, { color: selectedColor, onChange: this.handleColorChange })),
+            React.createElement(Sidebar_1.Sidebar, null,
+                React.createElement(SidebarHeader_1.SidebarHeader, null, "Users"),
+                React.createElement(UsersList_1.UsersList, { users: users }),
+                React.createElement(SidebarHeader_1.SidebarHeader, null, "Toolbar"),
+                React.createElement(ColorPicker_1.ColorPicker, { color: selectedColor, onChange: this.handleColorChange })),
             React.createElement(Whiteboard_1.Whiteboard, { onPointerMove: this.handlePointerMove, onContextLoad: function (application) { _this.application = application; } })));
     };
     return WhiteboardPage;

@@ -2,7 +2,11 @@
 import * as signalR from "@microsoft/signalr";
 import * as PIXI from "pixi.js";
 import { Whiteboard } from "../components/Whiteboard";
-import { CirclePicker, ColorResult } from "react-color";
+import { ColorResult } from "react-color";
+import { ColorPicker } from "../components/ColorPicker";
+import { SidebarHeader } from "../components/SidebarHeader";
+import { UsersList } from "../components/UsersList";
+import { Sidebar } from "../components/Sidebar";
 
 interface IState {
     users: { Key: string, Value: string }[],
@@ -102,36 +106,15 @@ export class WhiteboardPage extends React.Component<{}, IState> {
 
         return (
             <section style={{ display: "grid", height: "100%", gridTemplateColumns: "minmax(280px, 20%) 80%" }}>
-                <div
-                    style={{
-                        padding: 10,
-                        background: "#333",
-                        color: "#FFF"
-                    }}
-                >
-                    <strong>Users</strong>
+                <Sidebar>
+                    <SidebarHeader>Users</SidebarHeader>
 
-                    {users ? (
-                        <ul style={{ listStyleType: "none", margin: "15px 0 10px 0", borderBottom: "1px solid #777", padding: "0 0 10px 0" }}>
-                            {users.map(p => (
-                                <li key={p.Key}>
-                                    <div
-                                        style={{
-                                            display: "inline-block",
-                                            width: 15,
-                                            height: 15,
-                                            background: p.Value,
-                                            marginRight: 5
-                                        }}
-                                    />
-                                    {p.Key}
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <em>None</em>}
+                    <UsersList users={users} />
 
-                    <CirclePicker color={selectedColor} onChange={this.handleColorChange} />
-                </div>
+                    <SidebarHeader>Toolbar</SidebarHeader>
+
+                    <ColorPicker color={selectedColor} onChange={this.handleColorChange} />
+                </Sidebar>
 
 
                 <Whiteboard
